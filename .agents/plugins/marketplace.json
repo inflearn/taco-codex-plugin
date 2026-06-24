@@ -1,0 +1,20 @@
+{
+  "name": "inflearn",
+  "interface": {
+    "displayName": "Inflab"
+  },
+  "plugins": [
+    {
+      "name": "ai-usage",
+      "source": {
+        "source": "local",
+        "path": "./plugins/ai-usage"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}
