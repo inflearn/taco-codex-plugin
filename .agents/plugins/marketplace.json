@@ -5,10 +5,10 @@
   },
   "plugins": [
     {
-      "name": "ai-usage",
+      "name": "taco",
       "source": {
         "source": "local",
-        "path": "./plugins/ai-usage"
+        "path": "./plugins/taco"
       },
       "policy": {
         "installation": "AVAILABLE",
