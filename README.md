@@ -1,37 +1,45 @@
 # taco-codex-plugin
 
-Inflab 사내 LLM 사용량 트래커의 **Codex CLI 플러그인**. Codex 세션 이벤트
-(hook)마다 `taco` CLI 를 호출해 Codex 사용량을 수집한다.
+taco(AI 코딩 사용량·비용 트래커)의 **Codex CLI 플러그인**. Codex 세션 이벤트(hook)마다 `taco` CLI 를 호출해 Codex 사용량을 수집한다.
 
-이 레포는 **hook 등록 + 얇은 래퍼 스크립트**만 담는다. 파싱/필터/전송 로직은
-전부 `taco` CLI (`inflearn/taco`, brew 설치) 안에 있고, Claude
-플러그인과 동일한 CLI·설정(`~/.config/taco/config.json`)·필터를 공유한다.
+이 레포는 **hook 등록 + 얇은 래퍼 스크립트**만 담는다. 파싱/필터/전송 로직은 전부 `taco` CLI 안에 있고, Claude Code 플러그인과 동일한 CLI·설정(`~/.config/taco/config.json`)·필터를 공유한다.
 
-> Codex 는 Claude Code 와 달리 hook stdin 에 transcript 경로를 주지 않으므로,
-> CLI 가 `~/.codex/sessions/**/rollout-*.jsonl` 를 watermark 기반으로 증분
-> 스캔한다 (`taco collect --provider codex`). wakatime/codex-cli-wakatime
-> 과 동일한 방식.
+> Codex 는 Claude Code 와 달리 hook stdin 에 transcript 경로를 주지 않으므로, CLI 가 `~/.codex/sessions/**/rollout-*.jsonl` 를 watermark 기반으로 증분 스캔한다 (`taco collect --provider codex`).
 
-## 사전 조건
+## 사전 조건: taco CLI
 
-`taco` CLI v0.2.1+ 가 PATH 에 있어야 한다.
+`taco` CLI 가 PATH 에 있어야 한다.
 
 ```sh
-brew tap inflearn/internal git@github.com:inflearn/homebrew-internal
-brew install taco
-taco init     # git email/name, 수집 org/디렉터리, auto_sync 설정
+# macOS / Linux
+curl -fsSL https://inf.run/taco | sh
+
+# Windows (PowerShell)
+irm https://inf.run/taco.ps1 | iex
+```
+
+전송을 시작하려면 로그인:
+
+```sh
+taco login
 ```
 
 ## 설치
 
+대부분은 **설치 스크립트가 `taco plugins` 로 자동 연동**하므로 따로 할 필요가 없다. 수동으로 하려면:
+
 ```sh
-codex plugin marketplace add git@github.com:inflearn/taco-codex-plugin.git
+taco plugins        # 감지된 도구(Claude Code·Codex 등) 플러그인 설치
+```
+
+또는 Codex 플러그인 매니저로 직접:
+
+```sh
+codex plugin marketplace add https://github.com/inflearn/taco-codex-plugin.git
 codex plugin add taco@inflearn
 ```
 
-설치 후 Codex 를 다시 시작하면 hook 이 등록된다. 이후 세션마다
-`SessionStart` / `UserPromptSubmit` / `PostToolUse` 이벤트에서 Codex 사용량이
-증분 수집된다.
+설치 후 Codex 를 다시 시작하면 hook 이 등록된다. 이후 세션마다 `SessionStart` / `UserPromptSubmit` / `PostToolUse` 이벤트에서 Codex 사용량이 증분 수집된다.
 
 ## 동작
 
@@ -39,12 +47,11 @@ codex plugin add taco@inflearn
 Codex hook (SessionStart/UserPromptSubmit/PostToolUse)
   → $PLUGIN_ROOT/scripts/run            (백그라운드)
     → taco collect --provider codex (~/.codex/sessions 증분 스캔 → 로컬 버퍼)
-      → auto_sync 켜진 경우에만 → devops-api
+      → 로그인돼 있으면 → taco 서버
 ```
 
-- **자동 sync 는 기본 OFF.** 기본은 로컬 버퍼에만 쌓이고, 전송은 `taco sync`
-  또는 `taco init` 에서 auto_sync 활성화 시.
-- 수집 대상은 `taco init` 의 `allowed_orgs` / `allowed_dirs` 필터를 따른다.
+- **자동 전송은 기본 ON**(`auto_sync`). 로그인 전에는 로컬 버퍼에만 쌓이고, `taco login` 후부터 서버로 전송된다.
+- 수집 대상은 `allowed_orgs` / `allowed_dirs` 필터를 따른다.
 - 래퍼는 CLI 를 못 찾아도 조용히 종료 — Codex 를 절대 막지 않는다.
 
 ## 구성
@@ -61,5 +68,10 @@ Codex hook (SessionStart/UserPromptSubmit/PostToolUse)
 
 - CLI: `inflearn/taco`
 - Claude Code 플러그인: `inflearn/taco-claude-plugin`
-- 적재/읽기 API: `inflearn/devops-api` (`pkg/aiusage`)
+- API 서버: `inflearn/taco-api`
 - 대시보드: `inflearn/taco-dashboard`
+
+## 문서 · 대시보드
+
+- 문서: https://taco.inflearn.com/docs
+- 대시보드: https://taco.inflearn.com
