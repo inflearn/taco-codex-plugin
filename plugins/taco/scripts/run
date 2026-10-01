@@ -6,6 +6,11 @@
 # 파싱/필터/전송 로직은 전부 taco CLI 안에 있다.
 #
 # Codex 를 막지 않도록 백그라운드로 돌리고 즉시 반환. CLI 못 찾으면 조용히 종료.
+#
+# TACO_HOOK=1: 수집을 락 + throttle(5분) + time-budget 로 감싸, 매 이벤트마다 떠도
+# 스캔(~/.codex/sessions 수천 파일)이 겹겹이 쌓이지 않게 한다. 이미 돌고 있거나
+# 최근에 돌았으면 즉시 종료한다. (플래그가 아니라 env 라 구버전 CLI 와도 호환 —
+# 모르는 env 는 무시되고 평소대로 수집된다.)
 
 BIN="$(command -v taco 2>/dev/null)"
 if [ -z "$BIN" ]; then
@@ -18,5 +23,5 @@ if [ -z "$BIN" ]; then
 fi
 [ -z "$BIN" ] && exit 0
 
-"$BIN" collect --provider codex >/dev/null 2>&1 &
+TACO_HOOK=1 "$BIN" collect --provider codex >/dev/null 2>&1 &
 exit 0
